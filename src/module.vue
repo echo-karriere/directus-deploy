@@ -1,15 +1,16 @@
 <template>
   <div class="modules-deploy">
     <v-header
-      :title="content('title')"
+      :title="this.contents.title"
       :breadcrumb="breadcrumb"
       icon="backup"
     ></v-header>
     <div class="modules-deploy-content"></div>
 
-    <div class="modules-help-loading" v-if="loading">
+    <div class="modules-deploy-loading" v-if="loading">
       <div class="flex-item">
         <v-spinner
+          x-large
           v-show="loading"
           line-fg-color="var(--blue-grey-300)"
           line-bg-color="var(--blue-grey-200)"
@@ -19,10 +20,43 @@
       </div>
     </div>
 
+    <div v-if="error">
+      <h2>Error</h2>
+      <p>Whoops, something went wrong! Try again later...</p>
+    </div>
+
+    <div class="modules-help-content animated fadeIn" v-else-if="siteProd">
+      <section>
+        <h2>Site status</h2>
+      </section>
+
+      <section>
+        <h2>Deploy</h2>
+        <v-button
+          color="--white"
+          background-color="--green"
+          hover-background-color="--green-800"
+          large
+        >
+          Production
+        </v-button>
+
+        <v-button
+          color="--blue-grey-800"
+          background-color="--blue-grey-50"
+          hover-color="--red"
+          hover-background-color="--white"
+          large
+        >
+          Development
+        </v-button>
+      </section>
+    </div>
+
     <v-info-sidebar wide>
       <section class="info-sidebar-section">
-        <h2 class="font-accent" v-html="content('title')"></h2>
-        <p class="p" v-html="content('description')"></p>
+        <h2 class="font-accent">{{ this.contents.subtitle }}</h2>
+        <p class="p">{{ this.contents.description }}</p>
       </section>
     </v-info-sidebar>
   </div>
@@ -30,6 +64,18 @@
 
 <script>
 import { get } from "lodash";
+import axios from "axios";
+
+const instance = axios.create({
+  baseURL: "https://api.netlify.com/api/v1"
+});
+instance.interceptors.request.use(config => {
+  config.params = {
+    access_token: process.env.NETLIFY_KEY,
+    ...config.params
+  };
+  return config;
+});
 
 export default {
   name: "Deploy website",
@@ -39,60 +85,64 @@ export default {
     }
   },
   methods: {
-    content(input) {
-      let translation = get(this.contents, this.locale);
-      translation = translation || get(this.contents, "en-US");
-      return get(translation, input);
-    },
     load() {
       this.loading = true;
 
-      this.$api.api
-        .get("/custom/analytics/dashboard")
-        .then(response => {
-          this.loading = false;
-
-          this.analytics = response;
+      axios
+        .all([
+          instance.get(`/sites/${process.env.SITE_ID}`),
+          instance
+            .get(`/sites/${process.env.SITE_ID}/deployed-branches`)
+            .then(res => {
+              const dev = res.data.filter(obj => obj.name === "develop")[0];
+              return instance.get(
+                `/sites/${process.env.SITE_ID}/deploys/${dev.deploy_id}`
+              );
+            })
+        ])
+        .then(
+          axios.spread((prod, dev) => {
+            this.siteProd = prod.data;
+            this.siteDev = dev.data;
+            this.render();
+          })
+        )
+        .catch(err => {
+          this.error = true;
+          console.error(err);
         })
-        .catch(error => {
-          this.error = error;
-
-          this.loading = false;
-        });
+        .finally(() => (this.loading = false));
     },
     onClick(path) {
       this.$router.push(path);
     },
     render() {
-      let rect = this.$content.getBoundingClientRect();
-      let height = window.innerHeight - rect.y - 10;
-
-      this.$content.style.minHeight = `${height}px`;
-
-      this.load();
+      console.log(JSON.stringify(this.siteProd, null, 2));
+      console.log(JSON.stringify(this.siteDev, null, 2));
+      return this.siteProd;
     }
   },
   data() {
     return {
       contents: {
-        "en-US": {
-          title: "Deploy website",
-          subtitle: "Build and deploy website using Netlify",
-          description: "Blah blah blah"
-        }
-      }
+        title: "Deploy website",
+        subtitle: "Build and deploy website using Netlify",
+        description: "Blah blah blah"
+      },
+      loading: true,
+      error: false,
+      siteProd: null,
+      siteDev: null
     };
   },
   metaInfo() {
     return {
-      title: this.content("title"),
-      subtitle: this.content("subtitle")
+      title: this.contents.title,
+      subtitle: this.contents.subtitle
     };
   },
   mounted() {
-    this.$content = this.$el.querySelector(".modules-deploy-content");
-
-    if (this.$content) this.render();
+    this.load();
   }
 };
 </script>
@@ -100,5 +150,20 @@ export default {
 <style lang="scss" scoped>
 .modules-deploy {
   padding: var(--page-padding);
+}
+
+h2 {
+  font-size: x-large;
+}
+
+.v-spinner {
+  margin: auto;
+}
+
+.modules-deploy-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 350px);
 }
 </style>

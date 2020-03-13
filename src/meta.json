@@ -1,5 +1,5 @@
 {
-  "name": "deploy-website",
+  "name": "Deploy website",
   "version": "1.0.0",
   "icon": "backup",
   "types": ["string"],
