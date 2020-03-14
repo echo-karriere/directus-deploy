@@ -1,4 +1,4 @@
-# `deploy-website`
+# `directus-deploy`
 
 This is a small extension that shows the status of the latest production
 and development build of our website on our Directus instance. It also allows
@@ -16,7 +16,7 @@ NETLIFY_KEY=bazqux
 ```
 
 1. Build for production: `yarn build`
-2. Copy to `$DIRECTUS/extensions/custom/modules/deploy-website`
+2. Copy to `$DIRECTUS/extensions/custom/modules/directus-deploy`
 3. ???
 4. Profit
 
