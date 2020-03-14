@@ -15,8 +15,7 @@
           line-fg-color="var(--blue-grey-300)"
           line-bg-color="var(--blue-grey-200)"
           class="spinner"
-        >
-        </v-spinner>
+        />
       </div>
     </div>
 
@@ -26,14 +25,18 @@
     </div>
 
     <div class="modules-help-content animated fadeIn" v-else-if="siteProd">
-      <section class="modules-deploy-status-header">
-        <h2>
-          Site status
-        </h2>
-        <v-switch
-          v-model="showProd"
-          :label="this.showProd ? 'Showing prod' : 'Showing dev'"
-        />
+      <section>
+        <div class="modules-deploy-status-header">
+          <h2>Site status</h2>
+          <v-switch
+            v-model="showProd"
+            color="--green"
+            :label="this.showProd ? 'Showing prod' : 'Showing dev'"
+          />
+        </div>
+
+        <h3>{{ this.showProd ? "Production" : "Development" }} status</h3>
+        <p>Last deploy {{ getData("updated_at") | relativize }}</p>
       </section>
 
       <section>
@@ -43,9 +46,8 @@
           background-color="--green"
           hover-background-color="--green-800"
           large
+          >Production</v-button
         >
-          Production
-        </v-button>
 
         <v-button
           color="--blue-grey-800"
@@ -53,9 +55,8 @@
           hover-color="--red"
           hover-background-color="--white"
           large
+          >Development</v-button
         >
-          Development
-        </v-button>
       </section>
     </div>
 
@@ -71,6 +72,8 @@
 <script>
 import { get } from "lodash";
 import axios from "axios";
+import { formatRelative, parseISO } from "date-fns";
+import { enGB } from "date-fns/locale";
 
 const instance = axios.create({
   baseURL: "https://api.netlify.com/api/v1"
@@ -90,13 +93,28 @@ export default {
       return [];
     }
   },
+  filters: {
+    relativize: function(date) {
+      return formatRelative(parseISO(date), new Date(), {
+        locale: enGB
+      });
+    }
+  },
   methods: {
+    getData(data) {
+      return get(this.showProd ? this.siteProd : this.siteDev, data);
+    },
     load() {
       this.loading = true;
 
       axios
         .all([
-          instance.get(`/sites/${process.env.SITE_ID}`),
+          instance.get(`/sites/${process.env.SITE_ID}`).then(res => {
+            const deploy_id = res.data.deploy_id;
+            return instance.get(
+              `/sites/${process.env.SITE_ID}/deploys/${deploy_id}`
+            );
+          }),
           instance
             .get(`/sites/${process.env.SITE_ID}/deployed-branches`)
             .then(res => {
@@ -118,9 +136,6 @@ export default {
           console.error(err);
         })
         .finally(() => (this.loading = false));
-    },
-    onClick(path) {
-      this.$router.push(path);
     },
     render() {
       console.log(JSON.stringify(this.siteProd, null, 2));
@@ -161,6 +176,12 @@ export default {
 
 h2 {
   font-size: x-large;
+  padding: calc(var(--page-padding) / 2) 0;
+}
+
+h3 {
+  font-size: large;
+  padding: calc(var(--page-padding) / 2) 0;
 }
 
 .v-spinner {
