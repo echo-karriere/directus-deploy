@@ -11,7 +11,7 @@
   "author": "",
   "license": "GPL-3.0",
   "dependencies": {
-    "@directus/extension-toolkit": "^0.0.1",
+    "@directus/extension-toolkit": "^0.8.0",
     "axios": "^0.19.2",
     "date-fns": "^2.11.0",
     "lodash": "^4.17.15",
@@ -19,7 +19,7 @@
     "vue-hot-reload-api": "^2.3.4"
   },
   "devDependencies": {
-    "@vue/component-compiler-utils": "^2.6.0",
+    "@vue/component-compiler-utils": "^3.1.1",
     "cssnano": "^4.1.10",
     "sass": "^1.17.3",
     "vue-template-compiler": "^2.6.10"
