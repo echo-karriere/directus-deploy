@@ -26,8 +26,14 @@
     </div>
 
     <div class="modules-help-content animated fadeIn" v-else-if="siteProd">
-      <section>
-        <h2>Site status</h2>
+      <section class="modules-deploy-status-header">
+        <h2>
+          Site status
+        </h2>
+        <v-switch
+          v-model="showProd"
+          :label="this.showProd ? 'Showing prod' : 'Showing dev'"
+        />
       </section>
 
       <section>
@@ -132,7 +138,8 @@ export default {
       loading: true,
       error: false,
       siteProd: null,
-      siteDev: null
+      siteDev: null,
+      showProd: true
     };
   },
   metaInfo() {
@@ -165,5 +172,12 @@ h2 {
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 350px);
+}
+
+.modules-deploy-status-header {
+  display: flex;
+  h2 {
+    padding-right: var(--page-padding);
+  }
 }
 </style>
