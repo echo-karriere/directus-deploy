@@ -1,6 +1,10 @@
 <template>
   <div class="modules-deploy">
-    <v-header :title="this.contents.title" :breadcrumb="breadcrumb" icon="backup"></v-header>
+    <v-header
+      :title="this.contents.title"
+      :breadcrumb="breadcrumb"
+      icon="backup"
+    ></v-header>
     <div class="modules-deploy-content"></div>
 
     <div class="modules-deploy-loading" v-if="loading">
@@ -42,7 +46,8 @@
           background-color="--green"
           hover-background-color="--green-800"
           large
-        >Production</v-button>
+          >Production</v-button
+        >
 
         <v-button
           color="--blue-grey-800"
@@ -50,7 +55,8 @@
           hover-color="--red"
           hover-background-color="--white"
           large
-        >Development</v-button>
+          >Development</v-button
+        >
       </section>
     </div>
 
@@ -64,10 +70,11 @@
 </template>
 
 <script>
-import { get } from "lodash";
+import get from "lodash/get";
 import axios from "axios";
-import { formatRelative, parseISO } from "date-fns";
-import { enGB } from "date-fns/locale";
+import formatRelative from "date-fns/formatRelative";
+import parseISO from "date-fns/parseISO";
+import enGB from "date-fns/locale/en-GB";
 
 const instance = axios.create({
   baseURL: "https://api.netlify.com/api/v1"

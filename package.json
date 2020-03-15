@@ -5,7 +5,8 @@
   "main": "",
   "scripts": {
     "build": "directus-extensions build",
-    "dev": "directus-extensions watch"
+    "dev": "directus-extensions watch",
+    "inspect": "source-map-explorer dist/module.js"
   },
   "keywords": [],
   "author": "Sondre Nilsen <nilsen.sondre@gmail.com>",
@@ -22,6 +23,7 @@
     "@vue/component-compiler-utils": "^3.1.1",
     "cssnano": "^4.1.10",
     "sass": "^1.17.3",
+    "source-map-explorer": "^2.4.0",
     "vue-template-compiler": "^2.6.10"
   }
 }
