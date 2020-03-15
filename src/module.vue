@@ -63,22 +63,39 @@
 
       <section>
         <h2>Deploy</h2>
+        <v-input
+          v-model="message"
+          placeholder="Deployment message"
+          style="margin-bottom: var(--page-padding)"
+        ></v-input>
+        <dl v-if="message">
+          <dt><strong>Deploy message</strong></dt>
+          <dd>{{ message }} by {{ this.user }}</dd>
+        </dl>
+
         <v-button
           color="--white"
           background-color="--green"
           hover-background-color="--green-800"
+          :disabled="!Boolean(this.message)"
+          @click="overlay = true"
           large
-          >Production</v-button
+          >Deploy {{ this.showProd ? "production" : "development" }}</v-button
         >
 
-        <v-button
-          color="--blue-grey-800"
-          background-color="--blue-grey-50"
-          hover-color="--red"
-          hover-background-color="--white"
-          large
-          >Development</v-button
-        >
+        <portal v-if="overlay" to="modal">
+          <v-confirm
+            :message="
+              this.showProd
+                ? 'Please confirm that you want to deploy to production'
+                : 'Please confirm that you want to deploy to development'
+            "
+            :loading="loading"
+            @cancel="overlay = false"
+            @confirm="logout"
+          >
+          </v-confirm>
+        </portal>
       </section>
     </div>
 
@@ -133,6 +150,7 @@ export default {
     load() {
       this.loading = true;
 
+      this.user = this.$store.state.currentUser.first_name;
       axios
         .all([
           instance.get(`/sites/${process.env.SITE_ID}`).then(res => {
@@ -166,7 +184,7 @@ export default {
     render() {
       console.log(JSON.stringify(this.siteProd, null, 2));
       console.log(JSON.stringify(this.siteDev, null, 2));
-      return this.siteProd;
+      console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
     }
   },
   data() {
@@ -178,6 +196,9 @@ export default {
       },
       loading: true,
       error: false,
+      message: null,
+      user: null,
+      overlay: false,
       siteProd: null,
       siteDev: null,
       showProd: true
