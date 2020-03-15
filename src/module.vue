@@ -36,7 +36,29 @@
         </div>
 
         <h3>{{ this.showProd ? "Production" : "Development" }} status</h3>
-        <p>Last deploy {{ getData("updated_at") | relativize }}</p>
+        <dl>
+          <dt><strong>Deployment status</strong></dt>
+          <dd>Last deploy {{ getData("updated_at") | relativize }}</dd>
+          <dt><strong>Deployment Message</strong></dt>
+          <dd>{{ getData("title") }}</dd>
+          <dt><strong>Deployment commit</strong></dt>
+          <dd>
+            <a :href="getData('commit_url')">{{ getData("title") }}</a> by
+            {{ getData("committer") }} on branch {{ getData("branch") }}
+          </dd>
+          <dt><strong>Deployment data</strong></dt>
+          <dd>
+            <dl>
+              <dt><strong>Status</strong></dt>
+              <dd>{{ getData("summary.status") | capitalize }}</dd>
+              <dt><strong>Updates</strong></dt>
+              <dd>{{ getData("summary.messages[0].title") }}</dd>
+              <dd>{{ getData("summary.messages[0].description") }}</dd>
+              <dt><strong></strong></dt>
+              <dd></dd>
+            </dl>
+          </dd>
+        </dl>
       </section>
 
       <section>
@@ -99,6 +121,9 @@ export default {
       return formatRelative(parseISO(date), new Date(), {
         locale: enGB
       });
+    },
+    capitalize: function(input) {
+      return input.charAt(0).toUpperCase() + input.slice(1);
     }
   },
   methods: {
@@ -201,5 +226,19 @@ h3 {
   h2 {
     padding-right: var(--page-padding);
   }
+}
+
+strong {
+  font-weight: 800;
+}
+
+dl > dt {
+  font-weight: normal;
+  font-style: oblique;
+}
+
+dd {
+  padding-left: var(--page-padding);
+  margin-bottom: var(--input-padding);
 }
 </style>
