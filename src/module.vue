@@ -1,10 +1,6 @@
 <template>
   <div class="modules-deploy">
-    <v-header
-      :title="this.contents.title"
-      :breadcrumb="breadcrumb"
-      icon="backup"
-    ></v-header>
+    <v-header :title="this.contents.title" :breadcrumb="breadcrumb" icon="backup"></v-header>
     <div class="modules-deploy-content"></div>
 
     <div class="modules-deploy-loading" v-if="loading">
@@ -17,6 +13,10 @@
           class="spinner"
         />
       </div>
+    </div>
+
+    <div v-if="deploying">
+      <h2>Currently deploying!</h2>
     </div>
 
     <div v-if="error">
@@ -37,24 +37,31 @@
 
         <h3>{{ this.showProd ? "Production" : "Development" }} status</h3>
         <dl>
-          <dt><strong>Deployment status</strong></dt>
-          <dd>Last deploy {{ getData("updated_at") | relativize }}</dd>
-          <dt><strong>Deployment Message</strong></dt>
+          <dt>
+            <strong>Deployment status</strong>
+          </dt>
+          <dd>Last deploy {{ getData("created_at") | relativize }}</dd>
+          <dt>
+            <strong>Deployment Message</strong>
+          </dt>
           <dd>{{ getData("title") }}</dd>
-          <dt><strong>Deployment commit</strong></dt>
-          <dd>
-            <a :href="getData('commit_url')">{{ getData("title") }}</a> by
-            {{ getData("committer") }} on branch {{ getData("branch") }}
-          </dd>
-          <dt><strong>Deployment data</strong></dt>
+          <dt>
+            <strong>Deployment data</strong>
+          </dt>
           <dd>
             <dl>
-              <dt><strong>Status</strong></dt>
+              <dt>
+                <strong>Status</strong>
+              </dt>
               <dd>{{ getData("summary.status") | capitalize }}</dd>
-              <dt><strong>Updates</strong></dt>
+              <dt>
+                <strong>Updates</strong>
+              </dt>
               <dd>{{ getData("summary.messages[0].title") }}</dd>
               <dd>{{ getData("summary.messages[0].description") }}</dd>
-              <dt><strong></strong></dt>
+              <dt>
+                <strong></strong>
+              </dt>
               <dd></dd>
             </dl>
           </dd>
@@ -63,16 +70,20 @@
 
       <section>
         <h2>Deploy</h2>
+        <p
+          style="padding-bottom: calc(var(--page-padding) / 3);"
+        >This will build and deploy a {{ this.showProd ? 'production' : 'development' }} release with the latest data from this instance. Use with care.</p>
         <v-input
           v-model="message"
           placeholder="Deployment message"
           style="margin-bottom: var(--page-padding)"
         ></v-input>
         <dl v-if="message">
-          <dt><strong>Deploy message</strong></dt>
+          <dt>
+            <strong>Deploy message</strong>
+          </dt>
           <dd>{{ message }} by {{ this.user }}</dd>
         </dl>
-
         <v-button
           color="--white"
           background-color="--green"
@@ -80,8 +91,7 @@
           :disabled="!Boolean(this.message)"
           @click="overlay = true"
           large
-          >Deploy {{ this.showProd ? "production" : "development" }}</v-button
-        >
+        >Deploy {{ this.showProd ? "production" : "development" }}</v-button>
 
         <portal v-if="overlay" to="modal">
           <v-confirm
@@ -91,10 +101,10 @@
                 : 'Please confirm that you want to deploy to development'
             "
             :loading="loading"
+            confirm-text="Deploy"
             @cancel="overlay = false"
-            @confirm="logout"
-          >
-          </v-confirm>
+            @confirm="deploy"
+          ></v-confirm>
         </portal>
       </section>
     </div>
@@ -147,6 +157,18 @@ export default {
     getData(data) {
       return get(this.showProd ? this.siteProd : this.siteDev, data);
     },
+    deploy() {
+      const message = `${this.message} by ${this.user}`;
+      const formatTitle = message.replace(/ /g, "+");
+      axios
+        .post(
+          `https://api.netlify.com/build_hooks/${
+            this.showProd ? process.env.PROD_HOOK : process.env.DEV_HOOK
+          }?trigger_title=${formatTitle}`
+        )
+        .then(() => (this.deployed = true))
+        .catch(err => console.log(err));
+    },
     load() {
       this.loading = true;
 
@@ -191,7 +213,7 @@ export default {
     return {
       contents: {
         title: "Deploy website",
-        subtitle: "Build and deploy website using Netlify",
+        subtitle: "Deploy history",
         description: "Blah blah blah"
       },
       loading: true,
@@ -199,6 +221,8 @@ export default {
       message: null,
       user: null,
       overlay: false,
+      deployed: true,
+      deploying: false,
       siteProd: null,
       siteDev: null,
       showProd: true
