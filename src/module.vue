@@ -1,13 +1,17 @@
 <template>
   <div class="modules-deploy">
-    <v-header :title="this.contents.title" :breadcrumb="breadcrumb" icon="backup"></v-header>
+    <v-header
+      :title="contents.title"
+      :breadcrumb="breadcrumb"
+      icon="backup"
+    ></v-header>
     <div class="modules-deploy-content"></div>
 
-    <div class="modules-deploy-loading" v-if="loading">
+    <div v-if="loading" class="modules-deploy-loading">
       <div class="flex-item">
         <v-spinner
-          x-large
           v-show="loading"
+          x-large
           line-fg-color="var(--blue-grey-300)"
           line-bg-color="var(--blue-grey-200)"
           class="spinner"
@@ -24,18 +28,18 @@
       <p>Whoops, something went wrong! Try again later...</p>
     </div>
 
-    <div class="modules-help-content animated fadeIn" v-else-if="siteProd">
+    <div v-else-if="siteProd" class="modules-help-content animated fadeIn">
       <section>
         <div class="modules-deploy-status-header">
           <h2>Site status</h2>
           <v-switch
             v-model="showProd"
             color="--green"
-            :label="this.showProd ? 'Showing prod' : 'Showing dev'"
+            :label="showProd ? 'Showing prod' : 'Showing dev'"
           />
         </div>
 
-        <h3>{{ this.showProd ? "Production" : "Development" }} status</h3>
+        <h3>{{ showProd ? "Production" : "Development" }} status</h3>
         <dl>
           <dt>
             <strong>Deployment status</strong>
@@ -70,9 +74,11 @@
 
       <section>
         <h2>Deploy</h2>
-        <p
-          style="padding-bottom: calc(var(--page-padding) / 3);"
-        >This will build and deploy a {{ this.showProd ? 'production' : 'development' }} release with the latest data from this instance. Use with care.</p>
+        <p style="padding-bottom: calc(var(--page-padding) / 3);">
+          This will build and deploy a
+          {{ showProd ? "production" : "development" }} release with the latest
+          data from instance. Use with care.
+        </p>
         <v-input
           v-model="message"
           placeholder="Deployment message"
@@ -82,21 +88,22 @@
           <dt>
             <strong>Deploy message</strong>
           </dt>
-          <dd>{{ message }} by {{ this.user }}</dd>
+          <dd>{{ message }} by {{ user }}</dd>
         </dl>
         <v-button
           color="--white"
           background-color="--green"
           hover-background-color="--green-800"
-          :disabled="!Boolean(this.message)"
-          @click="overlay = true"
+          :disabled="!Boolean(message)"
           large
-        >Deploy {{ this.showProd ? "production" : "development" }}</v-button>
+          @click="overlay = true"
+          >Deploy {{ showProd ? "production" : "development" }}</v-button
+        >
 
         <portal v-if="overlay" to="modal">
           <v-confirm
             :message="
-              this.showProd
+              showProd
                 ? 'Please confirm that you want to deploy to production'
                 : 'Please confirm that you want to deploy to development'
             "
@@ -109,12 +116,7 @@
       </section>
     </div>
 
-    <v-info-sidebar wide>
-      <section class="info-sidebar-section">
-        <h2 class="font-accent">{{ this.contents.subtitle }}</h2>
-        <p class="p">{{ this.contents.description }}</p>
-      </section>
-    </v-info-sidebar>
+    <v-info-sidebar wide item-details />
   </div>
 </template>
 
@@ -137,12 +139,7 @@ instance.interceptors.request.use(config => {
 });
 
 export default {
-  name: "Deploy website",
-  computed: {
-    breadcrumb() {
-      return [];
-    }
-  },
+  name: "DeployWebsite",
   filters: {
     relativize: function(date) {
       return formatRelative(parseISO(date), new Date(), {
@@ -153,9 +150,36 @@ export default {
       return input.charAt(0).toUpperCase() + input.slice(1);
     }
   },
+  data() {
+    return {
+      contents: {
+        title: "Deploy website",
+        subtitle: "Deploy history",
+        description: "Blah blah blah"
+      },
+      loading: true,
+      error: false,
+      message: null,
+      user: null,
+      overlay: false,
+      deployed: true,
+      deploying: false,
+      siteProd: null,
+      siteDev: null,
+      showProd: true
+    };
+  },
+  computed: {
+    breadcrumb() {
+      return [];
+    }
+  },
+  mounted() {
+    this.load();
+  },
   methods: {
     getData(data) {
-      return get(this.showProd ? this.siteProd : this.siteDev, data);
+      return get(this.showProd ? this.siteProd[0] : this.siteDev[0], data);
     },
     deploy() {
       const message = `${this.message} by ${this.user}`;
@@ -176,9 +200,8 @@ export default {
       axios
         .all([
           instance.get(`/sites/${process.env.SITE_ID}`).then(res => {
-            const deploy_id = res.data.deploy_id;
             return instance.get(
-              `/sites/${process.env.SITE_ID}/deploys/${deploy_id}`
+              `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10?branch=master?match=true`
             );
           }),
           instance
@@ -209,33 +232,11 @@ export default {
       console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
     }
   },
-  data() {
-    return {
-      contents: {
-        title: "Deploy website",
-        subtitle: "Deploy history",
-        description: "Blah blah blah"
-      },
-      loading: true,
-      error: false,
-      message: null,
-      user: null,
-      overlay: false,
-      deployed: true,
-      deploying: false,
-      siteProd: null,
-      siteDev: null,
-      showProd: true
-    };
-  },
   metaInfo() {
     return {
       title: this.contents.title,
       subtitle: this.contents.subtitle
     };
-  },
-  mounted() {
-    this.load();
   }
 };
 </script>
