@@ -5,7 +5,6 @@
       :breadcrumb="breadcrumb"
       icon="backup"
     ></v-header>
-    <div class="modules-deploy-content"></div>
 
     <div v-if="loading" class="modules-deploy-loading">
       <div class="flex-item">
@@ -19,8 +18,15 @@
       </div>
     </div>
 
-    <div v-if="deploying">
-      <h2>Currently deploying!</h2>
+    <div v-if="deploying" class="modules-deploy-deploying">
+      <h2>
+        Currently deploying {{ production ? "production" : "development" }}
+      </h2>
+      <h3>{{ getData("created_at") | relativize | capitalize }}</h3>
+      <h4>
+        {{ getData("title") }}
+        {{ getData("committer") ? `by ${getData("committer")}` : "" }}
+      </h4>
     </div>
 
     <div v-if="error">
@@ -39,10 +45,19 @@
             v-model="production"
             color="--green"
             :label="production ? 'Showing prod' : 'Showing dev'"
+            @click.native="checkDeployStatus()"
           />
+          <v-button>Refresh</v-button>
         </div>
 
-        <h3>{{ production ? "Production" : "Development" }} status</h3>
+        <h3
+          :class="[
+            'modules-deploy-status',
+            production ? 'modules-warning' : 'modules-accent'
+          ]"
+        >
+          {{ production ? "Production" : "Development" }} status
+        </h3>
         <dl>
           <dt>
             <strong>Deployment status</strong>
@@ -169,19 +184,17 @@ export default {
     return {
       contents: {
         title: "Deploy website",
-        subtitle: "Deploy history",
-        description: "Deploy history"
+        subtitle: "Deploy history"
       },
       loading: true,
       error: false,
       message: null,
       user: null,
       overlay: false,
-      deployed: true,
       deploying: false,
       productionData: null,
       developmentData: null,
-      production: true
+      production: false
     };
   },
   computed: {
@@ -197,11 +210,20 @@ export default {
       return this.production ? this.productionData : this.developmentData;
     },
     getData(data) {
-      console.log(this.production ? this.productionData : this.developmentData);
       return get(
         this.production ? this.productionData[0] : this.developmentData[0],
         data
       );
+    },
+    checkDeployStatus() {
+      if (
+        this.getDataList()[0].state === "building" ||
+        this.getDataList()[0].state === "enqueued"
+      ) {
+        this.deploying = true;
+      } else {
+        this.deploying = false;
+      }
     },
     deploy() {
       const message = `${this.message} by ${this.user}`;
@@ -212,13 +234,19 @@ export default {
             this.production ? process.env.PROD_HOOK : process.env.DEV_HOOK
           }?trigger_title=${formatTitle}`
         )
-        .then(() => (this.deployed = true))
-        .catch(err => console.log(err));
+        .then(async () => {
+          this.overlay = false;
+          await this.load();
+        })
+        .catch(err => console.log(err))
+        .finally(() => {
+          this.checkDeployStatus();
+        });
     },
-    load() {
+    async load() {
       this.loading = true;
       this.user = this.$store.state.currentUser.first_name;
-      axios
+      await axios
         .all([
           instance.get(
             `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=master&match=true`
@@ -231,16 +259,18 @@ export default {
           axios.spread((prod, dev) => {
             this.productionData = prod.data;
             this.developmentData = dev.data;
-            this.render();
           })
         )
         .catch(err => {
           this.error = true;
           console.error(err);
         })
-        .finally(() => (this.loading = false));
+        .finally(() => {
+          this.checkDeployStatus();
+          this.loading = false;
+        });
     },
-    render() {
+    debug() {
       console.log(JSON.stringify(this.productionData, null, 2));
       console.log(JSON.stringify(this.developmentData, null, 2));
       console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
@@ -274,11 +304,37 @@ h3 {
   margin: auto;
 }
 
+.modules-deploy-status {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  max-width: 250px;
+}
+
+.modules-warning {
+  background-color: var(--warning);
+}
+
+.modules-accent {
+  background-color: var(--accent);
+}
+
 .modules-deploy-loading {
   display: flex;
   align-items: center;
   justify-content: center;
   min-height: calc(100vh - 350px);
+}
+
+.modules-deploy-deploying {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: var(--page-padding);
+  background-color: var(--success);
+  border-radius: 15px;
 }
 
 .modules-deploy-status-header {
