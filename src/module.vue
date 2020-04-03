@@ -28,18 +28,21 @@
       <p>Whoops, something went wrong! Try again later...</p>
     </div>
 
-    <div v-else-if="siteProd" class="modules-help-content animated fadeIn">
+    <div
+      v-else-if="productionData"
+      class="modules-help-content animated fadeIn"
+    >
       <section>
         <div class="modules-deploy-status-header">
           <h2>Site status</h2>
           <v-switch
-            v-model="showProd"
+            v-model="production"
             color="--green"
-            :label="showProd ? 'Showing prod' : 'Showing dev'"
+            :label="production ? 'Showing prod' : 'Showing dev'"
           />
         </div>
 
-        <h3>{{ showProd ? "Production" : "Development" }} status</h3>
+        <h3>{{ production ? "Production" : "Development" }} status</h3>
         <dl>
           <dt>
             <strong>Deployment status</strong>
@@ -76,8 +79,8 @@
         <h2>Deploy</h2>
         <p style="padding-bottom: calc(var(--page-padding) / 3);">
           This will build and deploy a
-          {{ showProd ? "production" : "development" }} release with the latest
-          data from instance. Use with care.
+          {{ production ? "production" : "development" }} release with the
+          latest data from this instance. Use with care.
         </p>
         <v-input
           v-model="message"
@@ -97,13 +100,13 @@
           :disabled="!Boolean(message)"
           large
           @click="overlay = true"
-          >Deploy {{ showProd ? "production" : "development" }}</v-button
+          >Deploy {{ production ? "production" : "development" }}</v-button
         >
 
         <portal v-if="overlay" to="modal">
           <v-confirm
             :message="
-              showProd
+              production
                 ? 'Please confirm that you want to deploy to production'
                 : 'Please confirm that you want to deploy to development'
             "
@@ -116,7 +119,19 @@
       </section>
     </div>
 
-    <v-info-sidebar wide item-details />
+    <v-info-sidebar wide item-detail>
+      <section class="info-sidebar-section">
+        <h2>{{ contents.subtitle }}</h2>
+
+        <ol class="modules-history-list">
+          <li v-for="dep in getDataList()" :key="dep.id">
+            <strong>{{ dep.created_at | relativize | capitalize }}:</strong
+            ><br />
+            <p>{{ dep.title ? dep.title : "No message" }}</p>
+          </li>
+        </ol>
+      </section>
+    </v-info-sidebar>
   </div>
 </template>
 
@@ -155,7 +170,7 @@ export default {
       contents: {
         title: "Deploy website",
         subtitle: "Deploy history",
-        description: "Blah blah blah"
+        description: "Deploy history"
       },
       loading: true,
       error: false,
@@ -164,9 +179,9 @@ export default {
       overlay: false,
       deployed: true,
       deploying: false,
-      siteProd: null,
-      siteDev: null,
-      showProd: true
+      productionData: null,
+      developmentData: null,
+      production: true
     };
   },
   computed: {
@@ -178,8 +193,15 @@ export default {
     this.load();
   },
   methods: {
+    getDataList() {
+      return this.production ? this.productionData : this.developmentData;
+    },
     getData(data) {
-      return get(this.showProd ? this.siteProd[0] : this.siteDev[0], data);
+      console.log(this.production ? this.productionData : this.developmentData);
+      return get(
+        this.production ? this.productionData[0] : this.developmentData[0],
+        data
+      );
     },
     deploy() {
       const message = `${this.message} by ${this.user}`;
@@ -187,7 +209,7 @@ export default {
       axios
         .post(
           `https://api.netlify.com/build_hooks/${
-            this.showProd ? process.env.PROD_HOOK : process.env.DEV_HOOK
+            this.production ? process.env.PROD_HOOK : process.env.DEV_HOOK
           }?trigger_title=${formatTitle}`
         )
         .then(() => (this.deployed = true))
@@ -195,28 +217,20 @@ export default {
     },
     load() {
       this.loading = true;
-
       this.user = this.$store.state.currentUser.first_name;
       axios
         .all([
-          instance.get(`/sites/${process.env.SITE_ID}`).then(res => {
-            return instance.get(
-              `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10?branch=master?match=true`
-            );
-          }),
-          instance
-            .get(`/sites/${process.env.SITE_ID}/deployed-branches`)
-            .then(res => {
-              const dev = res.data.filter(obj => obj.name === "develop")[0];
-              return instance.get(
-                `/sites/${process.env.SITE_ID}/deploys/${dev.deploy_id}`
-              );
-            })
+          instance.get(
+            `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=master&match=true`
+          ),
+          instance.get(
+            `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=develop&match=true`
+          )
         ])
         .then(
           axios.spread((prod, dev) => {
-            this.siteProd = prod.data;
-            this.siteDev = dev.data;
+            this.productionData = prod.data;
+            this.developmentData = dev.data;
             this.render();
           })
         )
@@ -227,8 +241,8 @@ export default {
         .finally(() => (this.loading = false));
     },
     render() {
-      console.log(JSON.stringify(this.siteProd, null, 2));
-      console.log(JSON.stringify(this.siteDev, null, 2));
+      console.log(JSON.stringify(this.productionData, null, 2));
+      console.log(JSON.stringify(this.developmentData, null, 2));
       console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
     }
   },
@@ -286,5 +300,11 @@ dl > dt {
 dd {
   padding-left: var(--page-padding);
   margin-bottom: var(--input-padding);
+}
+
+.modules-history-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
 }
 </style>
