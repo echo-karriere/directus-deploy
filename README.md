@@ -1,4 +1,4 @@
-# `directus-deploy`
+# `directus-deploy` ![pipeline](https://github.com/echo-karriere/directus-deploy/workflows/pipeline/badge.svg)
 
 This is a small extension that shows the status of the latest production
 and development build of our website on our Directus instance. It also allows

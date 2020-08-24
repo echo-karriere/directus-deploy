@@ -53,7 +53,7 @@
         <h3
           :class="[
             'modules-deploy-status',
-            production ? 'modules-warning' : 'modules-accent'
+            production ? 'modules-warning' : 'modules-accent',
           ]"
         >
           {{ production ? "Production" : "Development" }} status
@@ -100,7 +100,7 @@
         <v-input
           v-model="message"
           placeholder="Deployment message"
-          style="margin-bottom: var(--page-padding)"
+          style="margin-bottom: var(--page-padding);"
         ></v-input>
         <dl v-if="message">
           <dt>
@@ -151,216 +151,216 @@
 </template>
 
 <script>
-import get from "lodash/get";
-import axios from "axios";
-import formatRelative from "date-fns/formatRelative";
-import parseISO from "date-fns/parseISO";
-import enGB from "date-fns/locale/en-GB";
+  import get from "lodash/get";
+  import axios from "axios";
+  import formatRelative from "date-fns/formatRelative";
+  import parseISO from "date-fns/parseISO";
+  import enGB from "date-fns/locale/en-GB";
 
-const instance = axios.create({
-  baseURL: "https://api.netlify.com/api/v1"
-});
-instance.interceptors.request.use(config => {
-  config.params = {
-    access_token: process.env.NETLIFY_KEY,
-    ...config.params
-  };
-  return config;
-});
+  const instance = axios.create({
+    baseURL: "https://api.netlify.com/api/v1",
+  });
+  instance.interceptors.request.use((config) => {
+    config.params = {
+      access_token: process.env.NETLIFY_KEY,
+      ...config.params,
+    };
+    return config;
+  });
 
-export default {
-  name: "DeployWebsite",
-  filters: {
-    relativize: function(date) {
-      return formatRelative(parseISO(date), new Date(), {
-        locale: enGB
-      });
-    },
-    capitalize: function(input) {
-      return input.charAt(0).toUpperCase() + input.slice(1);
-    }
-  },
-  data() {
-    return {
-      contents: {
-        title: "Deploy website",
-        subtitle: "Deploy history"
+  export default {
+    name: "DeployWebsite",
+    filters: {
+      relativize: function (date) {
+        return formatRelative(parseISO(date), new Date(), {
+          locale: enGB,
+        });
       },
-      loading: true,
-      error: false,
-      message: null,
-      user: null,
-      overlay: false,
-      deploying: false,
-      productionData: null,
-      developmentData: null,
-      production: false
-    };
-  },
-  computed: {
-    breadcrumb() {
-      return [];
-    }
-  },
-  mounted() {
-    this.load();
-  },
-  methods: {
-    getDataList() {
-      return this.production ? this.productionData : this.developmentData;
+      capitalize: function (input) {
+        return input.charAt(0).toUpperCase() + input.slice(1);
+      },
     },
-    getData(data) {
-      return get(
-        this.production ? this.productionData[0] : this.developmentData[0],
-        data
-      );
+    data() {
+      return {
+        contents: {
+          title: "Deploy website",
+          subtitle: "Deploy history",
+        },
+        loading: true,
+        error: false,
+        message: null,
+        user: null,
+        overlay: false,
+        deploying: false,
+        productionData: null,
+        developmentData: null,
+        production: false,
+      };
     },
-    checkDeployStatus() {
-      if (
-        this.getDataList()[0].state === "building" ||
-        this.getDataList()[0].state === "enqueued"
-      ) {
-        this.deploying = true;
-      } else {
-        this.deploying = false;
-      }
+    computed: {
+      breadcrumb() {
+        return [];
+      },
     },
-    deploy() {
-      const message = `${this.message} by ${this.user}`;
-      const formatTitle = message.replace(/ /g, "+");
-      axios
-        .post(
-          `https://api.netlify.com/build_hooks/${
-            this.production ? process.env.PROD_HOOK : process.env.DEV_HOOK
-          }?trigger_title=${formatTitle}`
-        )
-        .then(async () => {
-          this.overlay = false;
-          await this.load();
-        })
-        .catch(err => console.log(err))
-        .finally(() => {
-          this.checkDeployStatus();
-        });
+    mounted() {
+      this.load();
     },
-    async load() {
-      this.loading = true;
-      this.user = this.$store.state.currentUser.first_name;
-      await axios
-        .all([
-          instance.get(
-            `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=master&match=true`
-          ),
-          instance.get(
-            `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=develop&match=true`
+    methods: {
+      getDataList() {
+        return this.production ? this.productionData : this.developmentData;
+      },
+      getData(data) {
+        return get(
+          this.production ? this.productionData[0] : this.developmentData[0],
+          data,
+        );
+      },
+      checkDeployStatus() {
+        if (
+          this.getDataList()[0].state === "building" ||
+          this.getDataList()[0].state === "enqueued"
+        ) {
+          this.deploying = true;
+        } else {
+          this.deploying = false;
+        }
+      },
+      deploy() {
+        const message = `${this.message} by ${this.user}`;
+        const formatTitle = message.replace(/ /g, "+");
+        axios
+          .post(
+            `https://api.netlify.com/build_hooks/${
+              this.production ? process.env.PROD_HOOK : process.env.DEV_HOOK
+            }?trigger_title=${formatTitle}`,
           )
-        ])
-        .then(
-          axios.spread((prod, dev) => {
-            this.productionData = prod.data;
-            this.developmentData = dev.data;
+          .then(async () => {
+            this.overlay = false;
+            await this.load();
           })
-        )
-        .catch(err => {
-          this.error = true;
-          console.error(err);
-        })
-        .finally(() => {
-          this.checkDeployStatus();
-          this.loading = false;
-        });
+          .catch((err) => console.log(err))
+          .finally(() => {
+            this.checkDeployStatus();
+          });
+      },
+      async load() {
+        this.loading = true;
+        this.user = this.$store.state.currentUser.first_name;
+        await axios
+          .all([
+            instance.get(
+              `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=master&match=true`,
+            ),
+            instance.get(
+              `/sites/${process.env.SITE_ID}/deploys?page=1&per_page=10&branch=develop&match=true`,
+            ),
+          ])
+          .then(
+            axios.spread((prod, dev) => {
+              this.productionData = prod.data;
+              this.developmentData = dev.data;
+            }),
+          )
+          .catch((err) => {
+            this.error = true;
+            console.error(err);
+          })
+          .finally(() => {
+            this.checkDeployStatus();
+            this.loading = false;
+          });
+      },
+      debug() {
+        console.log(JSON.stringify(this.productionData, null, 2));
+        console.log(JSON.stringify(this.developmentData, null, 2));
+        console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
+      },
     },
-    debug() {
-      console.log(JSON.stringify(this.productionData, null, 2));
-      console.log(JSON.stringify(this.developmentData, null, 2));
-      console.log(JSON.stringify(this.$store.state.currentUser, null, 2));
-    }
-  },
-  metaInfo() {
-    return {
-      title: this.contents.title,
-      subtitle: this.contents.subtitle
-    };
-  }
-};
+    metaInfo() {
+      return {
+        title: this.contents.title,
+        subtitle: this.contents.subtitle,
+      };
+    },
+  };
 </script>
 
 <style lang="scss" scoped>
-.modules-deploy {
-  padding: var(--page-padding);
-}
-
-h2 {
-  font-size: x-large;
-  padding: calc(var(--page-padding) / 2) 0;
-}
-
-h3 {
-  font-size: large;
-  padding: calc(var(--page-padding) / 2) 0;
-}
-
-.v-spinner {
-  margin: auto;
-}
-
-.modules-deploy-status {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 10px;
-  max-width: 250px;
-}
-
-.modules-warning {
-  background-color: var(--warning);
-}
-
-.modules-accent {
-  background-color: var(--accent);
-}
-
-.modules-deploy-loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: calc(100vh - 350px);
-}
-
-.modules-deploy-deploying {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding-bottom: var(--page-padding);
-  background-color: var(--success);
-  border-radius: 15px;
-}
-
-.modules-deploy-status-header {
-  display: flex;
-  h2 {
-    padding-right: var(--page-padding);
+  .modules-deploy {
+    padding: var(--page-padding);
   }
-}
 
-strong {
-  font-weight: 800;
-}
+  h2 {
+    font-size: x-large;
+    padding: calc(var(--page-padding) / 2) 0;
+  }
 
-dl > dt {
-  font-weight: normal;
-  font-style: oblique;
-}
+  h3 {
+    font-size: large;
+    padding: calc(var(--page-padding) / 2) 0;
+  }
 
-dd {
-  padding-left: var(--page-padding);
-  margin-bottom: var(--input-padding);
-}
+  .v-spinner {
+    margin: auto;
+  }
 
-.modules-history-list {
-  list-style-type: none;
-  padding: 0;
-  margin: 0;
-}
+  .modules-deploy-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    max-width: 250px;
+  }
+
+  .modules-warning {
+    background-color: var(--warning);
+  }
+
+  .modules-accent {
+    background-color: var(--accent);
+  }
+
+  .modules-deploy-loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - 350px);
+  }
+
+  .modules-deploy-deploying {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: var(--page-padding);
+    background-color: var(--success);
+    border-radius: 15px;
+  }
+
+  .modules-deploy-status-header {
+    display: flex;
+    h2 {
+      padding-right: var(--page-padding);
+    }
+  }
+
+  strong {
+    font-weight: 800;
+  }
+
+  dl > dt {
+    font-weight: normal;
+    font-style: oblique;
+  }
+
+  dd {
+    padding-left: var(--page-padding);
+    margin-bottom: var(--input-padding);
+  }
+
+  .modules-history-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
 </style>
