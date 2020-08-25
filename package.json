@@ -15,7 +15,7 @@
   "license": "MIT",
   "dependencies": {
     "@directus/extension-toolkit": "0.8.0",
-    "axios": "0.19.2",
+    "axios": "0.20.0",
     "date-fns": "2.11.1",
     "lodash": "4.17.19",
     "vue": "2.6.11",
