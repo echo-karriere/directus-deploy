@@ -17,7 +17,7 @@
     "@directus/extension-toolkit": "0.8.0",
     "axios": "0.20.0",
     "date-fns": "2.15.0",
-    "lodash": "4.17.19",
+    "lodash": "4.17.20",
     "vue": "2.6.11",
     "vue-hot-reload-api": "2.3.4"
   },
