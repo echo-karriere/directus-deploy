@@ -18,7 +18,7 @@
     "axios": "0.20.0",
     "date-fns": "2.15.0",
     "lodash": "4.17.20",
-    "vue": "2.6.11",
+    "vue": "2.6.12",
     "vue-hot-reload-api": "2.3.4"
   },
   "devDependencies": {
@@ -33,6 +33,6 @@
     "sass": "1.26.10",
     "source-map-explorer": "2.5.0",
     "vue-eslint-parser": "7.1.0",
-    "vue-template-compiler": "2.6.11"
+    "vue-template-compiler": "2.6.12"
   }
 }
