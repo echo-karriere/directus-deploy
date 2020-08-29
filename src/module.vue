@@ -92,7 +92,7 @@
 
       <section>
         <h2>Deploy</h2>
-        <p style="padding-bottom: calc(var(--page-padding) / 3);">
+        <p style="padding-bottom: calc(var(--page-padding) / 3)">
           This will build and deploy a
           {{ production ? "production" : "development" }} release with the
           latest data from this instance. Use with care.
@@ -100,7 +100,7 @@
         <v-input
           v-model="message"
           placeholder="Deployment message"
-          style="margin-bottom: var(--page-padding);"
+          style="margin-bottom: var(--page-padding)"
         ></v-input>
         <dl v-if="message">
           <dt>
